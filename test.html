@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css'></script>
+</head>
+
+<body>
+
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+
+            <h2>Search foods</h2>
+
+            <form>
+              <div class="form-group">
+                <label for="foodInput">Food Item</label>
+                <input type="text" class="form-control" id="foodInput" placeholder="Search all foods...">
+              </div>
+              <button type="submit" class="btn btn-default">Find my food!</button>
+            </form>
+
+            <div id="results">
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<script src='https://code.jquery.com/jquery-2.2.3.min.js'></script>
+<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js'></script>
+
+
+<script>
+
+function getSearchUrl(searchTerm) {
+
+
+    var APP_ID = '0c293ca4';
+    var APP_KEY = '2dde1220f124a4eb10aa1ca5ad9d99d6';
+
+    // var URL_BASE = 'https://api.nutritionix.com/v1_1/search/' + searchTerm +'?fields=item_name%2Citem_id%2Cbrand_name%2Cnf_calories%2Cnf_total_fat&appId=' + APP_ID + '&appKey=' + APP_KEY;
+
+    var data = {};
+    data.appId = APP_ID;
+    data.appKey = APP_KEY;
+    data.query = searchTerm;
+    data.fields = ["item_name","brand_name","nf_calories","nf_serving_size_qty","nf_serving_size_unit"];
+
+    data.filters = {};
+    data.filters.item_type = 2;
+
+    return data;
+
+}
+
+function showResults(response){
+    var items = response.hits;
+
+    var resultsDiv = document.getElementById('results');
+
+    for(var i=0; i<items.length; i++){
+        var item = items[i].fields;
+        console.log(item);
+
+        var itemDiv = document.createElement("div");
+        var itemLabel = document.createElement("h3");
+        itemLabel.innerHTML = item.item_name + ' - ' + item.nf_serving_size_qty + ' ' + item.nf_serving_size_unit;
+
+        var itemCalories = document.createElement("p");
+        itemCalories.innerHTML = "Calories: " + item.nf_calories;
+
+        var itemSize = document.createElement("p");
+        itemSize.innerHTML = "Serving Size: " + item.nf_serving_size_qty + ' ' + item.nf_serving_size_unit;
+        
+        itemDiv.appendChild(itemLabel);
+        itemDiv.appendChild(itemCalories);
+        itemDiv.appendChild(itemSize);
+        resultsDiv.appendChild(itemDiv);
+    }
+}
+
+
+function searchFoods(event) {
+    var term = $('#foodInput').val();
+    $('#results').empty();
+
+    var data = getSearchUrl(term);
+
+    $.ajax({
+        type:"POST",
+        url: 'https://api.nutritionix.com/v1_1/search',
+        data: data,
+        success: showResults
+    });  
+
+
+}
+
+$('#foodInput').on('keyup', searchFoods);
+
+
+
+
+</script>
+
+</body>
+</html>
