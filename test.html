@@ -6,6 +6,23 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css'></script>
+
+
+<style>
+
+.result-item {
+    padding: 3px 10px 8px;
+}
+
+.result-item:hover {
+    background-color: #ddd;
+    cursor: hand;
+}
+
+
+
+</style>
+
 </head>
 
 <body>
@@ -13,21 +30,32 @@
 
 <div class="container">
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-6">
+            <h2>What's in the jar?</h2>
 
-            <h2>Search foods</h2>
+            <div>
 
-            <form>
-              <div class="form-group">
-                <label for="foodInput">Food Item</label>
-                <input type="text" class="form-control" id="foodInput" placeholder="Search all foods...">
-              </div>
-              <button type="submit" class="btn btn-default">Find my food!</button>
-            </form>
-
-            <div id="results">
-
+                <h4 class="current-food">
+                    Nothing...
+                </h4>
             </div>
+        </div>
+
+
+        <div class="col-md-6" style="background-color: #eee; min-height: 100vh; max-height: 100%">
+
+                <h2>Select food for jar</h2>
+
+                <form>
+                  <div class="form-group">
+                    <label for="foodInput">Food Item</label>
+                    <input type="text" class="form-control" id="foodInput" placeholder="Search all foods...">
+                  </div>
+                </form>
+
+                <div id="results">
+
+                </div>
 
         </div>
     </div>
@@ -40,6 +68,11 @@
 
 
 <script>
+
+/* 
+ * TO DO: CHANGE ALL FOOD ITEMS TO OBJECTS
+ * MAKE THIS LESS JANK
+ */
 
 function getSearchUrl(searchTerm) {
 
@@ -62,30 +95,86 @@ function getSearchUrl(searchTerm) {
 
 }
 
+function createItemDetails(rawItem) {
+
+    var itemId = rawItem._id;
+
+    var item = rawItem.fields;
+
+    var itemDiv = document.createElement("div");
+    var itemLabel = document.createElement("h3");
+    itemLabel.innerHTML = item.item_name + ' - ' + item.nf_serving_size_qty + ' ' + item.nf_serving_size_unit;
+
+    var itemCalories = document.createElement("p");
+    itemCalories.innerHTML = "Calories: " + item.nf_calories;
+
+    var itemSize = document.createElement("p");
+    itemSize.innerHTML = "Serving Size: " + item.nf_serving_size_qty + ' ' + item.nf_serving_size_unit;
+
+    itemDiv.setAttribute('data-calories', item.nf_calories);
+    itemDiv.setAttribute('data-id', itemId);
+    itemDiv.setAttribute('data-name', item.item_name);
+
+    itemDiv.classList.add('result-item');
+    
+    itemDiv.appendChild(itemLabel);
+    itemDiv.appendChild(itemCalories);
+    itemDiv.appendChild(itemSize);
+
+
+    return itemDiv;
+}
+
 function showResults(response){
     var items = response.hits;
 
     var resultsDiv = document.getElementById('results');
 
     for(var i=0; i<items.length; i++){
-        var item = items[i].fields;
+        var item = items[i];
         console.log(item);
 
-        var itemDiv = document.createElement("div");
-        var itemLabel = document.createElement("h3");
-        itemLabel.innerHTML = item.item_name + ' - ' + item.nf_serving_size_qty + ' ' + item.nf_serving_size_unit;
 
-        var itemCalories = document.createElement("p");
-        itemCalories.innerHTML = "Calories: " + item.nf_calories;
+        var itemDiv = createItemDetails(item);
+        itemDiv.addEventListener("click", function() {
 
-        var itemSize = document.createElement("p");
-        itemSize.innerHTML = "Serving Size: " + item.nf_serving_size_qty + ' ' + item.nf_serving_size_unit;
-        
-        itemDiv.appendChild(itemLabel);
-        itemDiv.appendChild(itemCalories);
-        itemDiv.appendChild(itemSize);
+            cals = itemDiv.getAttribute('data-calories');
+            id = itemDiv.getAttribute('data-id');
+            name = itemDiv.getAttribute('data-name');
+
+            postToServer(cals, id, name);
+
+
+        });
+
         resultsDiv.appendChild(itemDiv);
     }
+}
+
+function showUpdatedFoodItem(foodId, name, cals) {
+    console.log(foodId);
+
+    var currentFood = $('.current-food');
+    currentFood.text(name);
+}
+
+function postToServer(cals, foodId, name) {
+    var public_key = '1nwWg1x2GzIlzKwLQ07z';
+    var private_key = '0mYp7qx4n0i4kXq1lavk';
+
+    // to do: get weight and also post weight? or do it from arduino
+    $.ajax({
+      type:"POST",
+      url: 'https://data.sparkfun.com/input/' + public_key,
+      headers: {'Phant-Private-Key': private_key},
+      data: {
+        id: foodId,
+        name: name,
+        weight: '150',
+        cal_per_g: cals
+      },
+      success: showUpdatedFoodItem(foodId, name, cals)
+    });  
 }
 
 
