@@ -138,9 +138,9 @@ function showResults(response){
         var itemDiv = createItemDetails(item);
         itemDiv.addEventListener("click", function() {
 
-            cals = itemDiv.getAttribute('data-calories');
-            id = itemDiv.getAttribute('data-id');
-            name = itemDiv.getAttribute('data-name');
+            var cals = itemDiv.getAttribute('data-calories');
+            var id = itemDiv.getAttribute('data-id');
+            var name = itemDiv.getAttribute('data-name');
 
             postToServer(cals, id, name);
 
