@@ -7,8 +7,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css'></script>
 
-
+<link href='https://fonts.googleapis.com/css?family=Oswald:700|PT+Mono|Open+Sans:300,700,300italic|Libre+Baskerville:400italic' rel='stylesheet' type='text/css'>
 <style>
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+
+p {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 300;
+}
+
+/*.table-layout {
+    display:table;
+    width:100%;
+}
+.table-layout .table-cell {
+    display:table-cell;
+    border:solid 1px #ccc;
+}
+
+.fixed-width-200 {
+    width:200px;
+}*/
+
+
+.select-food {
+    background-color: #eee;
+    height: 100%;
+}
 
 .result-item {
     padding: 3px 10px 8px;
@@ -19,6 +52,36 @@
     cursor: hand;
 }
 
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  background-color: #f5f5f5;
+}
+
+.main-view section {
+    display: none;
+}
+
+.main-view section.active {
+    display: block;
+}
+
+a.active {
+    color: red;
+}
+
+ul.nav-links li{
+    list-style: none;
+    text-align: center;
+}
+
+#results {
+    height: 500px; /* TO DO: COME BACK TO THIS VALUE; */
+    overflow-y: scroll;
+}
 
 
 </style>
@@ -28,9 +91,9 @@
 <body>
 
 
-<div class="container">
-    <div class="row">
-        <div class="col-md-6">
+<div class="main-view container">
+    <section id="monitor">
+        <div class="col-md-12 table-cell fixed-width-200">
             <h2>What's in the jar?</h2>
 
             <div>
@@ -39,28 +102,66 @@
                     Nothing...
                 </h4>
             </div>
+
+            <p>Today you're in the [color]</p>
+
         </div>
+    </section>
 
+    <section id="update" class="table-layout active">
+        <div class="row">
+            <div class="col-md-6 table-cell fixed-width-200">
+                <h2>What's in the jar?</h2>
 
-        <div class="col-md-6" style="background-color: #eee; min-height: 100vh; max-height: 100%">
+                <div>
 
-                <h2>Select food for jar</h2>
-
-                <form>
-                  <div class="form-group">
-                    <label for="foodInput">Food Item</label>
-                    <input type="text" class="form-control" id="foodInput" placeholder="Search all foods...">
-                  </div>
-                </form>
-
-                <div id="results">
-
+                    <h4 class="current-food">
+                        Nothing...
+                    </h4>
                 </div>
+            </div>
 
+
+            <div class="select-food col-md-6 table-cell">
+
+                    <h2>Select food for jar</h2>
+
+                    <form>
+                      <div class="form-group">
+                        <label for="foodInput">Food Item</label>
+                        <input type="text" class="form-control" id="foodInput" placeholder="Search all foods...">
+                      </div>
+                    </form>
+
+                    <div id="results">
+
+                    </div>
+
+            </div>
         </div>
-    </div>
+    </section>
+
+    <section id="track">
+        <h2>insert graph here</h2>
+    </section>
+
 </div>
 
+<div class="footer">
+    <div class="container">
+        <ul class="nav-links">
+            <div class="col-xs-4">
+                <li><a href="#monitor">Monitor</a></li>
+            </div>
+             <div class="col-xs-4">
+                <li><a href="#update" class="active">Update Jar</a></li>
+            </div>
+            <div class="col-xs-4">
+                <li><a href="#track">View Trends</a></li>
+            </div>
+        </ul>
+    </div>
+</div>
 
 
 <script src='https://code.jquery.com/jquery-2.2.3.min.js'></script>
@@ -69,10 +170,81 @@
 
 <script>
 
+var currentFood;
+
+
+function changeMainView(el) {
+    $('.nav-links .active').removeClass('active');
+    $(el.target).addClass('active');
+
+    var hash = el.target.hash;
+    var newView = $('.main-view').find(hash);
+    $('.main-view .active').removeClass('active');
+    newView.addClass('active');
+
+}
+
+
 /* 
  * TO DO: CHANGE ALL FOOD ITEMS TO OBJECTS
  * MAKE THIS LESS JANK
+ * CONERT TO CALORIES PER GRAM, SOME STANDARD UNIT
  */
+
+function FoodItem(data, source) {
+
+    if(source == 'api') {
+        this.data = data;
+        this.id = data._id;
+
+        this.cal_per_serving = data.fields.nf_calories;
+        this.cal_per_g = parseFloat(this.cal_per_serving)/parseFloat(data.fields.nf_serving_weight_grams);
+
+        this.name = data.fields.item_name;
+
+        this.serving_size = data.fields.nf_serving_size_qty + ' ' + data.fields.nf_serving_size_unit;    
+    }
+
+    if(source == 'server') {
+        this.id = data.id;
+        this.name = data.name;
+        this.cal_per_g = data.cal_per_g;
+        this.weight = data.weight;
+    }
+
+    FoodItem.prototype.update = function(foodId, name, calPerG) {
+        if(foodId !== undefined && foodId !== this.id) {
+            this.id = foodId;
+        }
+        if(name !== undefined && name !== this.name) {
+            this.name = name;
+        }
+        if(calPerG !== undefined && calPerG !== this.cal_per_g) {
+            this.cal_per_g = calPerG
+        }
+    };
+
+
+    FoodItem.prototype.handleEvent = function(event) {
+        switch (event.type) {
+            case "changeFromWeb": this.changeItem(this.element.value);
+            case "changeFromServer": this.changeWeight(this.element.value);
+        }
+    };
+
+    FoodItem.prototype.changeItem = function(value) {
+        console.log(value);
+        var foodDiv = $('.current-food');
+        foodDiv.text(value);
+    };    
+
+    FoodItem.prototype.changeWeight = function(value) {
+        console.log(value);
+        var foodDiv = $('.current-food');
+        foodDiv.text(value);
+    };   
+
+}
 
 function getSearchUrl(searchTerm) {
 
@@ -86,7 +258,7 @@ function getSearchUrl(searchTerm) {
     data.appId = APP_ID;
     data.appKey = APP_KEY;
     data.query = searchTerm;
-    data.fields = ["item_name","brand_name","nf_calories","nf_serving_size_qty","nf_serving_size_unit"];
+    data.fields = ["item_name","brand_name","nf_calories","nf_serving_size_qty","nf_serving_size_unit", "nf_serving_weight_grams"];
 
     data.filters = {};
     data.filters.item_type = 2;
@@ -96,24 +268,25 @@ function getSearchUrl(searchTerm) {
 }
 
 function createItemDetails(rawItem) {
+    var itemId = rawItem.id;
 
-    var itemId = rawItem._id;
-
-    var item = rawItem.fields;
+    var item = rawItem; //.fields;
 
     var itemDiv = document.createElement("div");
     var itemLabel = document.createElement("h3");
-    itemLabel.innerHTML = item.item_name + ' - ' + item.nf_serving_size_qty + ' ' + item.nf_serving_size_unit;
+    itemLabel.innerHTML = item.name + ' - ' + item.serving_size;
 
     var itemCalories = document.createElement("p");
-    itemCalories.innerHTML = "Calories: " + item.nf_calories;
+    itemCalories.innerHTML = "Calories: " + item.cal_per_serving;
 
     var itemSize = document.createElement("p");
-    itemSize.innerHTML = "Serving Size: " + item.nf_serving_size_qty + ' ' + item.nf_serving_size_unit;
+    itemSize.innerHTML = "Serving Size: " + item.serving_size;
 
-    itemDiv.setAttribute('data-calories', item.nf_calories);
+    var calsPerG = item.cal_per_g;
+
+    itemDiv.setAttribute('data-calPerG', calsPerG);
     itemDiv.setAttribute('data-id', itemId);
-    itemDiv.setAttribute('data-name', item.item_name);
+    itemDiv.setAttribute('data-name', item.name);
 
     itemDiv.classList.add('result-item');
     
@@ -125,40 +298,49 @@ function createItemDetails(rawItem) {
     return itemDiv;
 }
 
+function itemClickHandler(evt, item) {
+    console.log(item);
+
+    console.log(evt);
+
+    
+}
+
 function showResults(response){
     var items = response.hits;
 
     var resultsDiv = document.getElementById('results');
 
     for(var i=0; i<items.length; i++){
-        var item = items[i];
+        var item = new FoodItem(items[i], 'api');
         console.log(item);
 
-
         var itemDiv = createItemDetails(item);
-        itemDiv.addEventListener("click", function() {
+        resultsDiv.appendChild(itemDiv);
+        itemDiv.addEventListener("click", function(evt) {
 
-            var cals = itemDiv.getAttribute('data-calories');
+            var itemDiv = evt.target;
+            if(itemDiv.tagName !== 'DIV') {
+                itemDiv = itemDiv.parentNode;
+            }
+
+            var calPerG = itemDiv.getAttribute('data-calPerG');
             var id = itemDiv.getAttribute('data-id');
             var name = itemDiv.getAttribute('data-name');
 
-            postToServer(cals, id, name);
-
-
+            postToServer(calPerG, id, name);
         });
 
-        resultsDiv.appendChild(itemDiv);
+
     }
 }
 
-function showUpdatedFoodItem(foodId, name, cals) {
-    console.log(foodId);
-
-    var currentFood = $('.current-food');
-    currentFood.text(name);
+function showUpdatedFoodItem(foodId, name, calPerG) {
+    currentFood.update(foodId, name, calPerG);
+    currentFood.changeItem(name);
 }
 
-function postToServer(cals, foodId, name) {
+function postToServer(calPerG, foodId, name) {
     var public_key = '1nwWg1x2GzIlzKwLQ07z';
     var private_key = '0mYp7qx4n0i4kXq1lavk';
 
@@ -171,9 +353,9 @@ function postToServer(cals, foodId, name) {
         id: foodId,
         name: name,
         weight: '150',
-        cal_per_g: cals
+        cal_per_g: calPerG
       },
-      success: showUpdatedFoodItem(foodId, name, cals)
+      success: showUpdatedFoodItem(foodId, name, calPerG)
     });  
 }
 
@@ -190,11 +372,42 @@ function searchFoods(event) {
         data: data,
         success: showResults
     });  
-
-
 }
 
-$('#foodInput').on('keyup', searchFoods);
+function syncWithServer() {
+    var public_key = '1nwWg1x2GzIlzKwLQ07z';
+
+    $.ajax({
+        type:"GET",
+        url: 'https://data.sparkfun.com/output/' + public_key + '.json',
+        data: {page: 1},
+        dataType: 'jsonp',
+    }).done(function (results) {
+
+        // initialize currentFood
+        if(!currentFood){
+            currentFood = new FoodItem(results[0], 'server');
+            currentFood.changeItem(currentFood.name);            
+        }
+
+        // update weight
+        else {
+
+        }
+        console.log(currentFood);
+
+    });
+}
+
+$(document).ready(function() {
+    syncWithServer();
+    searchFoods();
+    $('#foodInput').on('keyup', searchFoods);
+    $('.nav-links a').on('click', changeMainView);
+
+
+
+});
 
 
 
