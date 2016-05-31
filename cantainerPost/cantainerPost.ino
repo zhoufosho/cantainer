@@ -6,8 +6,11 @@
 #include <Phant.h>
 
 
-#define WIFISSID "PacificPenguin"
-#define PASSWORD "patientpanda$$9"
+//#define WIFISSID "PacificPenguin"
+//#define PASSWORD "patientpanda$$9"
+
+#define WIFISSID "SPDL-Air"
+#define PASSWORD "Irf9Z.34N"
 
 #define NUM_FIELDS 4
 
