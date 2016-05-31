@@ -79,7 +79,7 @@ ul.nav-links li{
 }
 
 #results {
-    height: 500px; /* TO DO: COME BACK TO THIS VALUE; */
+    height: 400px; /* TO DO: COME BACK TO THIS VALUE; */
     overflow-y: scroll;
 }
 
@@ -171,6 +171,7 @@ ul.nav-links li{
 <script>
 
 var currentFood;
+var serverCheck;
 
 
 function changeMainView(el) {
@@ -212,18 +213,18 @@ function FoodItem(data, source) {
         this.weight = data.weight;
     }
 
-    FoodItem.prototype.update = function(foodId, name, calPerG) {
-        if(foodId !== undefined && foodId !== this.id) {
-            this.id = foodId;
+    FoodItem.prototype.update = function(data, fieldName){
+        if (fieldName == 'id'){
+            this.id = data;
+        } else if (fieldName == 'cal_per_g') {
+            this.cal_per_g = data;
+        } else if (fieldName == 'name') {
+            this.name = data;
+        } else if (fieldName == 'weight') {
+            this.weight = data;
         }
-        if(name !== undefined && name !== this.name) {
-            this.name = name;
-        }
-        if(calPerG !== undefined && calPerG !== this.cal_per_g) {
-            this.cal_per_g = calPerG
-        }
-    };
 
+    };
 
     FoodItem.prototype.handleEvent = function(event) {
         switch (event.type) {
@@ -232,6 +233,7 @@ function FoodItem(data, source) {
         }
     };
 
+    /* TO DO - HOW DOES DISPLAY FOR CURRENT ITEM WORK */
     FoodItem.prototype.changeItem = function(value) {
         console.log(value);
         var foodDiv = $('.current-food');
@@ -240,8 +242,7 @@ function FoodItem(data, source) {
 
     FoodItem.prototype.changeWeight = function(value) {
         console.log(value);
-        var foodDiv = $('.current-food');
-        foodDiv.text(value);
+        // where does this information get printed?
     };   
 
 }
@@ -267,10 +268,8 @@ function getSearchUrl(searchTerm) {
 
 }
 
-function createItemDetails(rawItem) {
-    var itemId = rawItem.id;
-
-    var item = rawItem; //.fields;
+function createItemDetails(item) {
+    var itemId = item.id;
 
     var itemDiv = document.createElement("div");
     var itemLabel = document.createElement("h3");
@@ -298,14 +297,6 @@ function createItemDetails(rawItem) {
     return itemDiv;
 }
 
-function itemClickHandler(evt, item) {
-    console.log(item);
-
-    console.log(evt);
-
-    
-}
-
 function showResults(response){
     var items = response.hits;
 
@@ -313,7 +304,6 @@ function showResults(response){
 
     for(var i=0; i<items.length; i++){
         var item = new FoodItem(items[i], 'api');
-        console.log(item);
 
         var itemDiv = createItemDetails(item);
         resultsDiv.appendChild(itemDiv);
@@ -336,7 +326,9 @@ function showResults(response){
 }
 
 function showUpdatedFoodItem(foodId, name, calPerG) {
-    currentFood.update(foodId, name, calPerG);
+    currentFood.update(foodId, 'id')
+    currentFood.update(name, 'name');
+    currentFood.update(calPerG, 'cal_per_g');
     currentFood.changeItem(name);
 }
 
@@ -352,7 +344,7 @@ function postToServer(calPerG, foodId, name) {
       data: {
         id: foodId,
         name: name,
-        weight: '150',
+        weight: currentFood.weight, /* TO DO: make sure this is updating */
         cal_per_g: calPerG
       },
       success: showUpdatedFoodItem(foodId, name, calPerG)
@@ -382,21 +374,28 @@ function syncWithServer() {
         url: 'https://data.sparkfun.com/output/' + public_key + '.json',
         data: {page: 1},
         dataType: 'jsonp',
-    }).done(function (results) {
 
-        // initialize currentFood
-        if(!currentFood){
-            currentFood = new FoodItem(results[0], 'server');
-            currentFood.changeItem(currentFood.name);            
+        success: function(data, textStatus, jqXHR){
+
+            console.log(textStatus);
+            var latest = data[0];
+
+            // initialize currentFood
+            if(currentFood === undefined){
+                currentFood = new FoodItem(latest, 'server');
+                currentFood.changeItem(currentFood.name);            
+            }
+
+            // update weight
+            else {
+                currentFood.update(latest.weight, 'weight');
+                window.clearInterval(serverCheck);
+            }
+            console.log('updated: ');
+            console.log(currentFood);
         }
-
-        // update weight
-        else {
-
-        }
-        console.log(currentFood);
-
     });
+
 }
 
 $(document).ready(function() {
@@ -406,6 +405,7 @@ $(document).ready(function() {
     $('.nav-links a').on('click', changeMainView);
 
 
+    serverCheck = window.setInterval(syncWithServer, 3000);
 
 });
 
