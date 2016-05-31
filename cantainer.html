@@ -12,7 +12,7 @@
 
 html {
   position: relative;
-  min-height: 100%;
+  height: 100%;
 }
 body {
   /* Margin bottom by footer height */
@@ -37,14 +37,9 @@ p {
     width:200px;
 }*/
 
-
-.select-food {
-    background-color: #eee;
-    height: 100%;
-}
-
 .result-item {
-    padding: 3px 10px 8px;
+    padding: 3px 15px 8px;
+    border-top: 1px solid #ccc;
 }
 
 .result-item:hover {
@@ -79,8 +74,11 @@ ul.nav-links li{
 }
 
 #results {
-    height: 400px; /* TO DO: COME BACK TO THIS VALUE; */
+    max-height: 75vh; /* TO DO: COME BACK TO THIS VALUE; */
     overflow-y: scroll;
+    padding-bottom: 30px;
+    background-color: #eee;
+
 }
 
 
@@ -94,23 +92,25 @@ ul.nav-links li{
 <div class="main-view container">
     <section id="monitor">
         <div class="col-md-12 table-cell fixed-width-200">
-            <h2>What's in the jar?</h2>
+            <div class="row">
+                <h2>What's in the jar?</h2>
 
-            <div>
+                <div>
 
-                <h4 class="current-food">
-                    Nothing...
-                </h4>
+                    <h4 class="current-food">
+                        Nothing...
+                    </h4>
+                </div>
+
+                <p>Today you're in the [color]</p>
             </div>
-
-            <p>Today you're in the [color]</p>
 
         </div>
     </section>
 
-    <section id="update" class="table-layout active">
+    <section id="update" class="active">
         <div class="row">
-            <div class="col-md-6 table-cell fixed-width-200">
+            <div class="col-md-6 table-cell fixed-width-200 hidden-xs hidden-xs">
                 <h2>What's in the jar?</h2>
 
                 <div>
@@ -122,21 +122,23 @@ ul.nav-links li{
             </div>
 
 
-            <div class="select-food col-md-6 table-cell">
+            <div class="select-food col-sm-12 col-md-6 table-cell">
+                <h2>Select food for jar</h2>
 
-                    <h2>Select food for jar</h2>
+                <form>
+                  <div class="form-group">
+                    <label for="foodInput">Food Item</label>
+                    <input type="text" class="form-control" id="foodInput" placeholder="Search all foods...">
+                  </div>
+                </form>
 
-                    <form>
-                      <div class="form-group">
-                        <label for="foodInput">Food Item</label>
-                        <input type="text" class="form-control" id="foodInput" placeholder="Search all foods...">
-                      </div>
-                    </form>
+                <div class="row">
 
                     <div id="results">
 
-                    </div>
 
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -149,7 +151,7 @@ ul.nav-links li{
 
 <div class="footer">
     <div class="container">
-        <ul class="nav-links">
+        <ul class="nav-links row">
             <div class="col-xs-4">
                 <li><a href="#monitor">Monitor</a></li>
             </div>
@@ -336,6 +338,8 @@ function postToServer(calPerG, foodId, name) {
     var public_key = '1nwWg1x2GzIlzKwLQ07z';
     var private_key = '0mYp7qx4n0i4kXq1lavk';
 
+    var POST_SIGNAL = -999;
+
     // to do: get weight and also post weight? or do it from arduino
     $.ajax({
       type:"POST",
@@ -344,7 +348,7 @@ function postToServer(calPerG, foodId, name) {
       data: {
         id: foodId,
         name: name,
-        weight: currentFood.weight, /* TO DO: make sure this is updating */
+        weight: POST_SIGNAL, /* TO DO: make sure this is updating */
         cal_per_g: calPerG
       },
       success: showUpdatedFoodItem(foodId, name, calPerG)
@@ -371,26 +375,42 @@ function syncWithServer() {
 
     $.ajax({
         type:"GET",
-        url: 'https://data.sparkfun.com/output/' + public_key + '.json',
+        url: 'https://data.sparkfun.com/output/' + public_key + '.json' + '?ne[weight]=-999',
         data: {page: 1},
         dataType: 'jsonp',
 
         success: function(data, textStatus, jqXHR){
-
-            console.log(textStatus);
             var latest = data[0];
 
-            // initialize currentFood
-            if(currentFood === undefined){
-                currentFood = new FoodItem(latest, 'server');
-                currentFood.changeItem(currentFood.name);            
-            }
-
-            // update weight
-            else {
+            if(currentFood !== undefined){
+                // update weight
                 currentFood.update(latest.weight, 'weight');
                 window.clearInterval(serverCheck);
+                
+                console.log('updated: ');
+                console.log(currentFood);
             }
+        }
+    });
+
+}
+
+
+function getInitialItem() {
+    var public_key = '1nwWg1x2GzIlzKwLQ07z';
+
+    $.ajax({
+        type:"GET",
+        url: 'https://data.sparkfun.com/output/' + public_key + '.json' + '?grep[weight]=-999',
+        data: {page: 1},
+        dataType: 'jsonp',
+
+        success: function(data, textStatus, jqXHR){
+            var latest = data[0];
+            
+            currentFood = new FoodItem(latest, 'server');
+            currentFood.changeItem(currentFood.name);            
+
             console.log('updated: ');
             console.log(currentFood);
         }
@@ -399,7 +419,7 @@ function syncWithServer() {
 }
 
 $(document).ready(function() {
-    syncWithServer();
+    getInitialItem();
     searchFoods();
     $('#foodInput').on('keyup', searchFoods);
     $('.nav-links a').on('click', changeMainView);

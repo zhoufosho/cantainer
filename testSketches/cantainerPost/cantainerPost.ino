@@ -24,7 +24,7 @@ String fieldNames[NUM_FIELDS] = {"name", "weight", "cal_per_g", "id"};
 String fieldData[NUM_FIELDS];
 
 
-String foodId = "-1";
+String foodId = "";
 
 
 ESP8266WiFiMulti WiFiMulti;
