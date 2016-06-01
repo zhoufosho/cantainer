@@ -62,7 +62,7 @@ h5 {
 p {
     font-family: 'Open Sans', sans-serif;
     font-weight: 300;
-    font-size: 1rem;
+    font-size: 0.9em;
 }
 
 /*.table-layout {
@@ -167,6 +167,36 @@ ul.nav-links li{
     text-align: center;
 }
 
+.confirmation-modal .modal-dialog {
+    margin-top: 45px;
+}
+
+.confirmation-modal .modal-footer {
+    padding-bottom: 45px;
+}
+
+.confirmation-modal .modal-body,
+.confirmation-modal .modal-footer {
+    text-align: center;
+}
+
+.confirmation-modal .modal-header,
+.confirmation-modal .modal-footer {
+    border: none;
+}
+
+.confirmation-modal .btn {
+    width: 200px;
+    border-radius: 5px;
+}
+
+.confirmation-modal .btn p {
+    margin: 0;
+    padding: 5px 0;
+    font-size: 1.2em;
+}
+
+
 
 </style>
 
@@ -233,9 +263,29 @@ ul.nav-links li{
 
     <section id="track">
         <h2>insert graph here</h2>
+        <h5>My calorie limit for sweets is: <span class="value">100</span> calories. </h5>
     </section>
 
 </div>
+
+<div class="modal fade confirmation-modal" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <h5>Are you sure this is the item in the jar?</h5>
+        <h4 class="modal-item-name"></h4>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal"><p>Wait, no!</p></button>
+        <button type="button" class="btn btn-primary confirm" onclick="postFromModal()"><p>Yes, that's it!</p></button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <div class="footer">
     <div class="container">
@@ -276,6 +326,8 @@ ul.nav-links li{
 
 var currentFood;
 var serverCheck;
+
+var potentialItem = {};
 
 var calConsumed = 0;
 var calThreshold = 0;
@@ -410,7 +462,7 @@ function createItemDetails(item) {
     var itemId = item.id;
 
     var itemDiv = document.createElement("div");
-    var itemLabel = document.createElement("h3");
+    var itemLabel = document.createElement("h5");
     itemLabel.innerHTML = item.name + ' - ' + item.serving_size;
 
     var itemCalories = document.createElement("p");
@@ -424,6 +476,8 @@ function createItemDetails(item) {
     itemDiv.setAttribute('data-calPerG', calsPerG);
     itemDiv.setAttribute('data-id', itemId);
     itemDiv.setAttribute('data-name', item.name);
+    itemDiv.setAttribute('data-toggle', 'modal');
+    itemDiv.setAttribute('data-target', '#exampleModal');
 
     itemDiv.classList.add('result-item');
     
@@ -452,15 +506,35 @@ function showResults(response){
                 itemDiv = itemDiv.parentNode;
             }
 
-            var calPerG = itemDiv.getAttribute('data-calPerG');
-            var id = itemDiv.getAttribute('data-id');
-            var name = itemDiv.getAttribute('data-name');
+            potentialItem.calPerG = itemDiv.getAttribute('data-calPerG');
+            potentialItem.id = itemDiv.getAttribute('data-id');
+            potentialItem.name = itemDiv.getAttribute('data-name');
 
-            postToServer(calPerG, id, name);
+            $('#exampleModal').on('show.bs.modal', function (event) {
+
+              var modal = $(this)
+              modal.find('.modal-item-name').text(potentialItem.name);
+
+
+            });
+
         });
 
-
     }
+}
+
+function postFromModal() {
+    console.log("posted");
+    postToServer(potentialItem.calPerG, potentialItem.id, potentialItem.name);
+    $('#exampleModal').modal('hide');
+
+    var newView = $('.main-view').find('#monitor');
+    $('.main-view .active').removeClass('active');
+    $('.nav-links .active').removeClass('active');
+
+    newView.addClass('active');
+    $('#monitor').addClass('active');
+
 }
 
 function showUpdatedFoodItem(foodId, name, calPerG) {
@@ -563,11 +637,11 @@ $(document).ready(function() {
     getInitialItem();
 
     /* currently commented out in order to save api requests */
-    // searchFoods();
-    // $('#foodInput').on('keyup', searchFoods);
+    searchFoods();
+    $('#foodInput').on('keyup', searchFoods);
     $('.nav-links a').on('click', changeMainView);
 
-    // serverCheck = window.setInterval(syncWithServer, 2000);
+    serverCheck = window.setInterval(syncWithServer, 2000);
 
 });
 
