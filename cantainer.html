@@ -528,12 +528,13 @@ function postFromModal() {
     postToServer(potentialItem.calPerG, potentialItem.id, potentialItem.name);
     $('#exampleModal').modal('hide');
 
+    /* go to monitor view */
     var newView = $('.main-view').find('#monitor');
     $('.main-view .active').removeClass('active');
     $('.nav-links .active').removeClass('active');
 
     newView.addClass('active');
-    $('#monitor').addClass('active');
+    $('a[href$="#monitor"]').addClass('active');
 
 }
 
