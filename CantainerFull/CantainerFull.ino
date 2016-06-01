@@ -1,7 +1,8 @@
 /*********************************************************************
 *
-*
-*
+* Sketch for the Cantainer
+* ME116m, Spring 2016
+* 
 *
 *********************************************************************/
 
@@ -23,7 +24,7 @@
 
 #define WEIGHT_CHANGE_THRESHOLD 100
 
-#define NUM_FIELDS 4
+#define NUM_FIELDS 6
 
 #define ARDUINO_SIGNAL "arduino"
 #define WEB_SIGNAL "web"
@@ -39,7 +40,7 @@ char server[] = "data.sparkfun.com";    // name address for data.sparkFun (using
 const String publicKey = "1nwWg1x2GzIlzKwLQ07z";
 const String privateKey = "0mYp7qx4n0i4kXq1lavk";
 
-String fieldNames[NUM_FIELDS] = {"name", "weight", "cal_per_g", "id"};
+String fieldNames[NUM_FIELDS] = {"name", "weight", "cal_per_g", "id", "cal_consumed", "cal_daily_threshold"};
 String fieldData[NUM_FIELDS];
 
 String foodId = "";

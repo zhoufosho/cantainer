@@ -175,6 +175,9 @@ ul.nav-links li{
 var currentFood;
 var serverCheck;
 
+var calConsumed = 0;
+var calThreshold = 0;
+
 var ARDUINO_SIGNAL = "arduino";
 var WEB_SIGNAL = "web";
 
@@ -354,7 +357,6 @@ function postToServer(calPerG, foodId, name) {
     var public_key = '1nwWg1x2GzIlzKwLQ07z';
     var private_key = '0mYp7qx4n0i4kXq1lavk';
 
-    // to do: get weight and also post weight? or do it from arduino
     $.ajax({
       type:"POST",
       url: 'https://data.sparkfun.com/input/' + public_key,
@@ -362,9 +364,11 @@ function postToServer(calPerG, foodId, name) {
       data: {
         id: foodId,
         name: name,
-        weight: '', /* TO DO: make sure this is updating */
+        weight: '', /* arduino is responsible for handling weight, so this is blank */
         cal_per_g: calPerG,
-        sender: WEB_SIGNAL
+        sender: WEB_SIGNAL,
+        cal_consumed: '',
+        cal_daily_threshold: ''
       },
       success: showUpdatedFoodItem(foodId, name, calPerG)
     });  
@@ -404,9 +408,7 @@ function syncWithServer() {
                 // update weight
                 currentFood.update(latest.weight, 'weight');
                 currentFood.changeItem();
-                
-                console.log('NEW WEIGHT: ');
-                console.log(currentFood);
+
             }
         }
     });
@@ -442,12 +444,14 @@ function getInitialItem() {
 
 $(document).ready(function() {
     getInitialItem();
-    //searchFoods();
-    //$('#foodInput').on('keyup', searchFoods);
+
+    /* currently commented out in order to save api requests */
+    searchFoods();
+    // $('#foodInput').on('keyup', searchFoods);
     $('.nav-links a').on('click', changeMainView);
 
 
-    serverCheck = window.setInterval(syncWithServer, 3000);
+    serverCheck = window.setInterval(syncWithServer, 2000);
 
 });
 
