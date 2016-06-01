@@ -95,6 +95,7 @@ p {
   /* Set the fixed height of the footer here */
   height: 65px;
   background-color: #f5f5f5;
+  border-top: 1px solid #aaa;
 }
 
 .main-view section {
@@ -112,6 +113,10 @@ p {
     border-bottom: 1px solid rgb(170, 170, 170);
     border-bottom-left-radius: 7px;
     border-bottom-right-radius: 7px;
+}
+
+.active .icon-wrapper {
+    margin-top: -1px;
 }
 
 ul.nav-links li{
@@ -206,11 +211,11 @@ ul.nav-links li{
 
 
             <div class="select-food col-sm-12 col-lg-6 table-cell">
-                <h4>Select food for jar</h4>
+                <h4>Select your food</h4>
 
                 <form>
                   <div class="form-group">
-                    <label for="foodInput">Food Item</label>
+                    <label for="foodInput"><h5>What did you put in the jar?</h5></label>
                     <input type="text" class="form-control" id="foodInput" placeholder="Search all foods...">
                   </div>
                 </form>
