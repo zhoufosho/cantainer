@@ -22,12 +22,48 @@
 #define WIFISSID "SPDL-Air"
 #define PASSWORD "Irf9Z.34N"
 
+#include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+  #include <avr/power.h>
+#endif
+
+#define NEOPIXELPIN 13
+#define NEOPIXELNUM 8
+Adafruit_NeoPixel lightStrip = Adafruit_NeoPixel(NEOPIXELNUM, NEOPIXELPIN, NEO_GRB + NEO_KHZ800);
+
 #define WEIGHT_CHANGE_THRESHOLD 100
 
 #define NUM_FIELDS 6
 
 #define ARDUINO_SIGNAL "arduino"
 #define WEB_SIGNAL "web"
+
+int maxCalories = 900;
+
+/* neopixel functions */
+
+void changeColor(uint32_t c, uint8_t wait){
+  for(uint16_t i = 0; i < lightStrip.numPixels()/2; i++){
+    lightStrip.setPixelColor(i, c);
+    lightStrip.setPixelColor(lightStrip.numPixels() - i - 1, c);
+    lightStrip.show();
+    delay(wait);
+  }
+}
+
+
+uint32_t wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+    return lightStrip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  if(WheelPos < 170) {
+    WheelPos -= 85;
+    return lightStrip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+  WheelPos -= 170;
+  return lightStrip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+}
 
 /* wifi stuff */
 
@@ -257,20 +293,30 @@ void printStandardDisplay() {
 
   float calPerG = getFieldData("cal_per_g").toFloat();
   float calories = currentWeight * calPerG;
-
+  display.setTextSize(2);
+  if(currentWeight < 1) calories = 0;
+  
+  display.print((int) calories);
+  display.print(" kCal");
+  display.setTextSize(1);
+  display.println("");
+  display.println("");
   if(currentWeight < 1) {
     display.print("0");
     calories = 0;
   } else {
     display.print(currentWeight);    
   }
-  display.println(" grams");
-
-  display.print(calories);
-  display.println(" calories");
-  
+  display.print(" g");
   display.display();
+
+  if(calories < maxCalories){
+    changeColor(wheel(map(calories, 0, maxCalories, 85, 0)), 0);
+  } else {
+    changeColor(wheel(0), 0);
+  }
 }
+
 
 void setup()   {                
   Serial.begin(9600);
@@ -280,6 +326,11 @@ void setup()   {
   // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)  
   display.clearDisplay();
+
+  /*set up NeoPixels */
+  lightStrip.begin();
+  lightStrip.setBrightness(100);
+  lightStrip.show();
 
   /* set up vcnl4010 */
   Serial.println("VCNL4010 setup");
@@ -309,6 +360,11 @@ void setup()   {
   /* set up initial weight */
   scale.set_scale(calibration_factor); //Adjust to this calibration factor
   currentWeight = scale.get_units();
+
+
+
+  
+  
 }
 
 void updateFoodValuesFromServer(String json) {
