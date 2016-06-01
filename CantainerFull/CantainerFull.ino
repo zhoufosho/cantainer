@@ -314,7 +314,7 @@ void printStandardDisplay() {
     display.print(currentWeight);    
   }
   display.print(" g");
-  display.flip();
+  //display.flip();
   display.display();
 
   if(calories < maxCalories){
