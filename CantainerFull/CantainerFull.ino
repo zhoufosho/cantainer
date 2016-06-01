@@ -260,9 +260,9 @@ void printStandardDisplay() {
 
   if(currentWeight < 1) {
     display.print("0");
+    calories = 0;
   } else {
     display.print(currentWeight);    
-    calories = 0;
   }
   display.println(" grams");
 
@@ -337,6 +337,8 @@ void loop() {
 
   if(prox > PROX_THRESHOLD) {
       // text display tests
+      // intensity of the lights??
+      
       handSensedHandler();
   }
 
@@ -380,6 +382,8 @@ void loop() {
     setFieldData("weight", String(weight));
     postFoodData("weight");
   }
+
+  /* neopixel */
   
   
   /* display */
