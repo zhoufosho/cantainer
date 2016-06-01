@@ -5,6 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css'></script>
 
 <link href='https://fonts.googleapis.com/css?family=Oswald:700|PT+Mono|Open+Sans:300,700,300italic|Libre+Baskerville:400italic' rel='stylesheet' type='text/css'>
@@ -19,9 +20,49 @@ body {
   margin-bottom: 60px;
 }
 
+
+h1 {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 8em;
+    text-transform: uppercase;
+    font-style: none;
+}
+
+h2 {
+    font-family: "oswald";
+    font-size: 12rem;
+    text-transform: uppercase;
+}
+
+h3 {
+    font-size: 30px;
+    font-family: 'PT Mono';
+    font-weight: 200;
+    text-transform: uppercase;
+    color: #aaa;
+}
+
+h4 {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 5rem;
+    font-weight: 400;
+    font-style: italic;
+}
+
+
+h5 {
+    font-family: 'PT Mono', serif;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: #aaa;
+}
+
+
 p {
     font-family: 'Open Sans', sans-serif;
     font-weight: 300;
+    font-size: 1rem;
 }
 
 /*.table-layout {
@@ -52,7 +93,7 @@ p {
   bottom: 0;
   width: 100%;
   /* Set the fixed height of the footer here */
-  height: 60px;
+  height: 65px;
   background-color: #f5f5f5;
 }
 
@@ -64,13 +105,49 @@ p {
     display: block;
 }
 
-a.active {
-    color: red;
+.active li{
+    background-color: white;
+    border-left: 1px solid rgb(170, 170, 170);
+    border-right: 1px solid rgb(170, 170, 170);
+    border-bottom: 1px solid rgb(170, 170, 170);
+    border-bottom-left-radius: 7px;
+    border-bottom-right-radius: 7px;
 }
 
 ul.nav-links li{
     list-style: none;
     text-align: center;
+}
+
+.container section {
+    margin-top: 45px;
+}
+
+.currentFood-name {
+    margin-bottom: 30px;
+}
+
+.current-food h4 {
+    margin-bottom: 28px;
+}
+
+.monitor-jar {
+    margin-bottom: 60px;
+}
+
+.nav-links .icon-wrapper {
+    padding: 5px;
+}
+
+.nav-links .icon-wrapper img{
+    max-height: 30px;
+}
+
+.nav-links h5 {
+    margin-top: 2px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #333;
 }
 
 #results {
@@ -79,6 +156,10 @@ ul.nav-links li{
     padding-bottom: 30px;
     background-color: #eee;
 
+}
+
+#monitor{
+    text-align: center;
 }
 
 
@@ -92,32 +173,19 @@ ul.nav-links li{
 <div class="main-view container">
     <section id="monitor" class="active">
         <div class="col-md-12 table-cell fixed-width-200">
-            <div class="row">
-                <h2>What's in the jar?</h2>
+            <div class="monitor-jar row">
+                <h3>What's in the jar?</h3>
 
                 <div>
 
-                    <h4 class="current-food">
-                        Nothing...
-                    </h4>
+                    <div class="current-food">
+                        <h4>Nothing...</h4>
+                    </div>
                 </div>
 
             </div>
-            <div class="row">
-                <h4>Calorie Count</h4>
-                <p>Today you're in the [color]</p>
-
-                 <form>
-                  <div class="form-group">
-                    <div class="col-xs-6">
-                    <label for="calThresholdInput">Calorie Threshold: </label>
-                </div>
-                <div class="col-xs-6">
-                    <input type="number" class="form-control" id="calThresholdInput" placeholder="Search all foods...">
-                </div>
-                  </div>
-                </form>
-
+            <div class="monitor-cals row">
+                <h5>Today you're in the <h4> [color]</h4></h5>
             </div>
 
         </div>
@@ -125,20 +193,20 @@ ul.nav-links li{
 
     <section id="update">
         <div class="row">
-            <div class="col-md-6 table-cell fixed-width-200 hidden-xs hidden-xs">
-                <h2>What's in the jar?</h2>
+            <div class="col-lg-6 table-cell fixed-width-200 visible-lg visible-xl">
+                <h3>What's in the jar?</h3>
 
                 <div>
 
-                    <h4 class="current-food">
-                        Nothing...
-                    </h4>
+                    <div class="current-food">
+                        <h4>Nothing...</h4>
+                    </div>
                 </div>
             </div>
 
 
-            <div class="select-food col-sm-12 col-md-6 table-cell">
-                <h2>Select food for jar</h2>
+            <div class="select-food col-sm-12 col-lg-6 table-cell">
+                <h4>Select food for jar</h4>
 
                 <form>
                   <div class="form-group">
@@ -168,10 +236,24 @@ ul.nav-links li{
     <div class="container">
         <ul class="nav-links row">
             <div class="col-xs-4">
-                <li><a href="#monitor" class="active">Monitor</a></li>
+                <a href="#monitor" class="active">
+                    <li>
+                    <div class="icon-wrapper">
+                        <img src="dial.png" />
+                    </div>
+                    <h5>Monitor</h5>
+                    </li>
+                </a>
             </div>
              <div class="col-xs-4">
-                <li><a href="#update">Update Jar</a></li>
+                <a href="#update">
+                    <li>
+                    <div class="icon-wrapper">
+                        <img src="jar.png" />
+                    </div>
+                    <h5>Update Jar</h5>
+                    </li>
+                </a>
             </div>
             <div class="col-xs-4">
                 <li><a href="#track">View Trends</a></li>
@@ -198,13 +280,26 @@ var WEB_SIGNAL = "web";
 
 
 function changeMainView(el) {
-    $('.nav-links .active').removeClass('active');
-    $(el.target).addClass('active');
 
-    var hash = el.target.hash;
+    var navLink = el.target;
+    while(navLink.tagName !== 'A') {
+        navLink = navLink.parentNode;
+    }
+    navLink = $(navLink);
+
+    var hash = el.target;
+    while(hash.tagName !== 'A') {
+        hash = hash.parentNode;
+    }
+    hash = hash.hash;
+
+
     var newView = $('.main-view').find(hash);
     $('.main-view .active').removeClass('active');
+    $('.nav-links .active').removeClass('active');
+
     newView.addClass('active');
+    navLink.addClass('active');
 
 }
 
@@ -270,9 +365,11 @@ function FoodItem(data, source) {
             calories = Math.round(this.weight * this.cal_per_g);
         }
 
-        foodDiv.html('<h3>' + this.name + '</h3>' + 
-                     '<p>' + this.weight + ' grams </p>' +
-                     '<p>' + calories + ' calories</p>'
+        foodDiv.html('<h2 class="currentFood-name">' + this.name + '</h2>' + 
+                     '<h5>how much is left?</h5>' +
+                     '<h4><span class="value">' + this.weight + '</span> grams </h4>' +
+                     '<h5>how many calories is it?</h5>' +
+                     '<h4><span class="value">' + calories + '</span> calories</h4>'
                     );
     };    
 
@@ -465,8 +562,7 @@ $(document).ready(function() {
     // $('#foodInput').on('keyup', searchFoods);
     $('.nav-links a').on('click', changeMainView);
 
-
-    serverCheck = window.setInterval(syncWithServer, 2000);
+    // serverCheck = window.setInterval(syncWithServer, 2000);
 
 });
 
