@@ -25,7 +25,8 @@
 
 #define NUM_FIELDS 4
 
-#define SPECIAL_SIGNAL -999
+#define ARDUINO_SIGNAL "arduino"
+#define WEB_SIGNAL "web"
 
 /* wifi stuff */
 
@@ -162,8 +163,8 @@ String getStreamPath() {
   path += ".json";
 
   // hacky way to get signals sent by web
-  path += "?grep[weight]=";
-  path += SPECIAL_SIGNAL;
+  path += "?grep[sender]=";
+  path += WEB_SIGNAL;
   
   return path;
 }
@@ -187,6 +188,9 @@ String createPostPath(String fieldName) {
       path += fieldData[i];
     }
   }
+
+  path += "&sender=";
+  path += ARDUINO_SIGNAL;
 
   return path;
 

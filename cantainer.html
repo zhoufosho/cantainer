@@ -175,6 +175,9 @@ ul.nav-links li{
 var currentFood;
 var serverCheck;
 
+var ARDUINO_SIGNAL = "arduino";
+var WEB_SIGNAL = "web";
+
 
 function changeMainView(el) {
     $('.nav-links .active').removeClass('active');
@@ -230,21 +233,34 @@ function FoodItem(data, source) {
 
     FoodItem.prototype.handleEvent = function(event) {
         switch (event.type) {
-            case "changeFromWeb": this.changeItem(this.element.value);
+            case "changeFromWeb": this.changeItem();
             case "changeFromServer": this.changeWeight(this.element.value);
         }
     };
 
     /* TO DO - HOW DOES DISPLAY FOR CURRENT ITEM WORK */
-    FoodItem.prototype.changeItem = function(value) {
-        console.log(value);
+    FoodItem.prototype.changeItem = function() {
+
         var foodDiv = $('.current-food');
-        foodDiv.text(value);
+
+
+        var weight = this.weight;
+        if(weight < 1) {
+            weight = 0;
+            calories = 0;
+        } else {
+            calories = Math.round(this.weight * this.cal_per_g);
+        }
+
+        foodDiv.html('<h3>' + this.name + '</h3>' + 
+                     '<p>' + this.weight + ' grams </p>' +
+                     '<p>' + calories + ' calories</p>'
+                    );
     };    
 
     FoodItem.prototype.changeWeight = function(value) {
         console.log(value);
-        // where does this information get printed?
+        // special event for weight change?
     };   
 
 }
@@ -331,14 +347,12 @@ function showUpdatedFoodItem(foodId, name, calPerG) {
     currentFood.update(foodId, 'id')
     currentFood.update(name, 'name');
     currentFood.update(calPerG, 'cal_per_g');
-    currentFood.changeItem(name);
+    currentFood.changeItem();
 }
 
 function postToServer(calPerG, foodId, name) {
     var public_key = '1nwWg1x2GzIlzKwLQ07z';
     var private_key = '0mYp7qx4n0i4kXq1lavk';
-
-    var POST_SIGNAL = -999;
 
     // to do: get weight and also post weight? or do it from arduino
     $.ajax({
@@ -348,8 +362,9 @@ function postToServer(calPerG, foodId, name) {
       data: {
         id: foodId,
         name: name,
-        weight: POST_SIGNAL, /* TO DO: make sure this is updating */
-        cal_per_g: calPerG
+        weight: '', /* TO DO: make sure this is updating */
+        cal_per_g: calPerG,
+        sender: WEB_SIGNAL
       },
       success: showUpdatedFoodItem(foodId, name, calPerG)
     });  
@@ -375,19 +390,22 @@ function syncWithServer() {
 
     $.ajax({
         type:"GET",
-        url: 'https://data.sparkfun.com/output/' + public_key + '.json' + '?ne[weight]=-999',
+        url: 'https://data.sparkfun.com/output/' + public_key + '.json' + '?grep[sender]=' + ARDUINO_SIGNAL,
         data: {page: 1},
         dataType: 'jsonp',
 
         success: function(data, textStatus, jqXHR){
-            var latest = data[0];
 
             if(currentFood !== undefined){
+                var latest = data[0];
+
+                console.log(latest);
+
                 // update weight
                 currentFood.update(latest.weight, 'weight');
-                window.clearInterval(serverCheck);
+                currentFood.changeItem();
                 
-                console.log('updated: ');
+                console.log('NEW WEIGHT: ');
                 console.log(currentFood);
             }
         }
@@ -401,18 +419,22 @@ function getInitialItem() {
 
     $.ajax({
         type:"GET",
-        url: 'https://data.sparkfun.com/output/' + public_key + '.json' + '?grep[weight]=-999',
+        url: 'https://data.sparkfun.com/output/' + public_key + '.json' + '?grep[sender]=' + WEB_SIGNAL,
         data: {page: 1},
         dataType: 'jsonp',
 
         success: function(data, textStatus, jqXHR){
-            var latest = data[0];
-            
-            currentFood = new FoodItem(latest, 'server');
-            currentFood.changeItem(currentFood.name);            
+            if(data !== undefined){
+                var latest = data[0];
 
-            console.log('updated: ');
-            console.log(currentFood);
+                console.log(latest);
+                
+                currentFood = new FoodItem(latest, 'server');
+                currentFood.changeItem();            
+
+                console.log('updated: ');
+                console.log(currentFood);
+            }
         }
     });
 
@@ -420,8 +442,8 @@ function getInitialItem() {
 
 $(document).ready(function() {
     getInitialItem();
-    searchFoods();
-    $('#foodInput').on('keyup', searchFoods);
+    //searchFoods();
+    //$('#foodInput').on('keyup', searchFoods);
     $('.nav-links a').on('click', changeMainView);
 
 
