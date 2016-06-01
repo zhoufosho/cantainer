@@ -31,7 +31,8 @@
 #define NEOPIXELNUM 8
 Adafruit_NeoPixel lightStrip = Adafruit_NeoPixel(NEOPIXELNUM, NEOPIXELPIN, NEO_GRB + NEO_KHZ800);
 
-#define WEIGHT_CHANGE_THRESHOLD 100
+#define WEIGHT_CHANGE_THRESHOLD 7
+#define WEIGHT_OF_LID 71
 
 #define NUM_FIELDS 6
 
@@ -39,31 +40,6 @@ Adafruit_NeoPixel lightStrip = Adafruit_NeoPixel(NEOPIXELNUM, NEOPIXELPIN, NEO_G
 #define WEB_SIGNAL "web"
 
 int maxCalories = 900;
-
-/* neopixel functions */
-
-void changeColor(uint32_t c, uint8_t wait){
-  for(uint16_t i = 0; i < lightStrip.numPixels()/2; i++){
-    lightStrip.setPixelColor(i, c);
-    lightStrip.setPixelColor(lightStrip.numPixels() - i - 1, c);
-    lightStrip.show();
-    delay(wait);
-  }
-}
-
-
-uint32_t wheel(byte WheelPos) {
-  WheelPos = 255 - WheelPos;
-  if(WheelPos < 85) {
-    return lightStrip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-  }
-  if(WheelPos < 170) {
-    WheelPos -= 85;
-    return lightStrip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
-  }
-  WheelPos -= 170;
-  return lightStrip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-}
 
 /* wifi stuff */
 
@@ -95,10 +71,13 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define YPOS 1
 #define DELTAY 2
 
+#define CURRENT_CALORIES 300
+
 /* vcnl4010 */
 Adafruit_VCNL4010 vcnl;
 
 #define PROX_THRESHOLD 3000
+#define AMBIENT_THRES 160
 
 
 /* hx711 */
@@ -108,9 +87,10 @@ Adafruit_VCNL4010 vcnl;
 
 HX711 scale(DOUT, CLK);
 
-float calibration_factor = -470; //-210000 / 453.59 grams in a pound;
+float calibration_factor = 470; //-210000 / 453.59 grams in a pound;
 
 float currentWeight = 0;
+bool capOn = true;
 
 
 /* bitmap stuff */
@@ -140,6 +120,31 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
+
+/* neopixel functions */
+
+void changeColor(uint32_t c, uint8_t wait){
+  for(uint16_t i = 0; i < lightStrip.numPixels()/2; i++){
+    lightStrip.setPixelColor(i, c);
+    lightStrip.setPixelColor(lightStrip.numPixels() - i - 1, c);
+    lightStrip.show();
+    delay(wait);
+  }
+}
+
+
+uint32_t wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+    return lightStrip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  if(WheelPos < 170) {
+    WheelPos -= 85;
+    return lightStrip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+  WheelPos -= 170;
+  return lightStrip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+}
 
 void printScaleCalibration() {
 
@@ -270,6 +275,7 @@ void postFoodData(String fieldName) {
 }
 
 void handSensedHandler() {
+
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0,0);
@@ -308,6 +314,7 @@ void printStandardDisplay() {
     display.print(currentWeight);    
   }
   display.print(" g");
+  display.flip();
   display.display();
 
   if(calories < maxCalories){
@@ -325,6 +332,7 @@ void setup()   {
   Serial.println("starting oled...");
   // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)  
+  display.setRotation(2);
   display.clearDisplay();
 
   /*set up NeoPixels */
@@ -361,10 +369,7 @@ void setup()   {
   scale.set_scale(calibration_factor); //Adjust to this calibration factor
   currentWeight = scale.get_units();
 
-
-
-  
-  
+   
 }
 
 void updateFoodValuesFromServer(String json) {
@@ -390,12 +395,18 @@ void loop() {
   
   int prox = vcnl.readProximity();
   Serial.print("Prox: "); Serial.println(prox);
+   int ambient = vcnl.readAmbient();
+  Serial.print("ambient: "); Serial.println(ambient);
 
-  if(prox > PROX_THRESHOLD) {
+  if(ambient < AMBIENT_THRES) {
       // text display tests
       // intensity of the lights??
       
       handSensedHandler();
+      
+      
+      // to do: fix this
+      changeColor(wheel(map(CURRENT_CALORIES, 0, maxCalories, 85, 0)), 0);
   }
 
 
@@ -430,13 +441,44 @@ void loop() {
   /* scale */
   scale.set_scale(calibration_factor);
   float weight = scale.get_units();
+
+  Serial.println(weight);
+  Serial.print("DIFFERENCE: ");
+  Serial.println(abs(currentWeight - weight));
+
+  float weightDifference = abs(currentWeight - weight);
   
-  if(abs(currentWeight - weight) >= WEIGHT_CHANGE_THRESHOLD) {
+  if(weightDifference >= WEIGHT_CHANGE_THRESHOLD) {
     Serial.print("CHANGED!!!! NEW WEIGHT: ");
     Serial.println(weight);
-    currentWeight = weight;
-    setFieldData("weight", String(weight));
-    postFoodData("weight");
+    
+//    // difference is the cap)
+//    if(weightDifference > WEIGHT_OF_LID - 3 && weightDifference < WEIGHT_OF_LID + 3) {
+//
+//      // cap is removed
+//      if (capOn && weight > currentWeight) {
+//        capOn = false;
+//        Serial.println("cap is added");
+//      }
+//
+//      // cap is added
+//      if (!capOn && weight < currentWeight) {
+//        Serial.println("cap is added");
+//        capOn = true;
+////        scale.set_scale();
+////      scale.tare();  //Reset the scale to 0
+//      }
+//      
+//      
+//    
+//    } else {
+
+      // regular food item
+      currentWeight = weight;
+      setFieldData("weight", String(weight));
+      postFoodData("weight");
+//    }
+   
   }
 
   /* neopixel */
@@ -444,7 +486,7 @@ void loop() {
   
   /* display */
   printStandardDisplay();
-  delay(400);
+  delay(200);
   display.clearDisplay();
   
 }

@@ -83,6 +83,10 @@ p {
     border-top: 1px solid #ccc;
 }
 
+.result-item h5 {
+    color: #333;
+}
+
 .result-item:hover {
     background-color: #ddd;
     cursor: hand;
@@ -156,7 +160,7 @@ ul.nav-links li{
 }
 
 #results {
-    max-height: 75vh; /* TO DO: COME BACK TO THIS VALUE; */
+    max-height: 70vh; /* TO DO: COME BACK TO THIS VALUE; */
     overflow-y: scroll;
     padding-bottom: 30px;
     background-color: #eee;
@@ -220,7 +224,7 @@ ul.nav-links li{
 
             </div>
             <div class="monitor-cals row">
-                <h5>Today you're in the <h4> [color]</h4></h5>
+                <!-- <h5>Today you're in the <h4> [color]</h4></h5> -->
             </div>
 
         </div>
@@ -264,6 +268,8 @@ ul.nav-links li{
     <section id="track">
         <h2>insert graph here</h2>
         <h5>My calorie limit for sweets is: <span class="value">100</span> calories. </h5>
+
+        <div id="chart" style="width: 100%;"></div>
     </section>
 
 </div>
@@ -306,7 +312,7 @@ ul.nav-links li{
                     <div class="icon-wrapper">
                         <img src="jar.png" />
                     </div>
-                    <h5>Update Jar</h5>
+                    <h5>Jar Contents</h5>
                     </li>
                 </a>
             </div>
@@ -423,8 +429,8 @@ function FoodItem(data, source) {
         }
 
         foodDiv.html('<h2 class="currentFood-name">' + this.name + '</h2>' + 
-                     '<h5>how much is left?</h5>' +
-                     '<h4><span class="value">' + this.weight + '</span> grams </h4>' +
+                     '<h5>how much did you take?</h5>' +
+                     '<h4><span class="value">' + Math.round(this.weight) + '</span> grams </h4>' +
                      '<h5>how many calories is it?</h5>' +
                      '<h4><span class="value">' + calories + '</span> calories</h4>'
                     );
@@ -528,7 +534,7 @@ function postFromModal() {
     postToServer(potentialItem.calPerG, potentialItem.id, potentialItem.name);
     $('#exampleModal').modal('hide');
 
-    /* go to monitor view */
+    /* go to monitor view  */
     var newView = $('.main-view').find('#monitor');
     $('.main-view .active').removeClass('active');
     $('.nav-links .active').removeClass('active');
@@ -600,7 +606,6 @@ function syncWithServer() {
                 // update weight
                 currentFood.update(latest.weight, 'weight');
                 currentFood.changeItem();
-
             }
         }
     });
@@ -632,6 +637,7 @@ function getInitialItem() {
         }
     });
 
+
 }
 
 $(document).ready(function() {
@@ -643,6 +649,7 @@ $(document).ready(function() {
     $('.nav-links a').on('click', changeMainView);
 
     serverCheck = window.setInterval(syncWithServer, 2000);
+
 
 });
 
